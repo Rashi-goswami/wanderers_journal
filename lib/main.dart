@@ -20,6 +20,16 @@ class WanderersJournal extends StatelessWidget {
   }
 }
 
+class Task {
+  String name;
+  bool completed;
+
+  Task({
+    required this.name,
+    this.completed = false,
+  });
+}
+
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -28,30 +38,84 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  bool linux = false;
-  bool dsa = false;
-  bool gym = false;
+  List<Task> tasks = [
+    Task(name: "Linux Learning"),
+    Task(name: "DSA Practice"),
+    Task(name: "Gym"),
+  ];
 
   double getProgress() {
-    int completed = 0;
+    if (tasks.isEmpty) return 0;
 
-    if (linux) completed++;
-    if (dsa) completed++;
-    if (gym) completed++;
+    int completed =
+        tasks.where((task) => task.completed).length;
 
-    return (completed / 3) * 100;
+    return (completed / tasks.length) * 100;
+  }
+
+  void addTask(String taskName) {
+    if (taskName.trim().isEmpty) return;
+
+    setState(() {
+      tasks.add(Task(name: taskName));
+    });
+  }
+
+  void showAddTaskDialog() {
+    TextEditingController controller =
+        TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text("Add Task"),
+          content: TextField(
+            controller: controller,
+            autofocus: true,
+            decoration: const InputDecoration(
+              hintText: "Enter task name",
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: const Text("Cancel"),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                addTask(controller.text);
+                Navigator.pop(context);
+              },
+              child: const Text("Add"),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    double progress = getProgress();
+
     return Scaffold(
       appBar: AppBar(
         title: const Text("🌿 Wanderer's Journal"),
       ),
+
+      floatingActionButton: FloatingActionButton(
+        onPressed: showAddTaskDialog,
+        child: const Icon(Icons.add),
+      ),
+
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(16),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment:
+              CrossAxisAlignment.start,
           children: [
             const Text(
               "Today's Tasks",
@@ -63,42 +127,30 @@ class _HomeScreenState extends State<HomeScreen> {
 
             const SizedBox(height: 20),
 
-            CheckboxListTile(
-              title: const Text("Linux Learning"),
-              value: linux,
-              onChanged: (value) {
-                setState(() {
-                  linux = value!;
-                });
-              },
+            Expanded(
+              child: ListView.builder(
+                itemCount: tasks.length,
+                itemBuilder: (context, index) {
+                  return CheckboxListTile(
+                    title: Text(tasks[index].name),
+                    value: tasks[index].completed,
+                    onChanged: (value) {
+                      setState(() {
+                        tasks[index].completed =
+                            value ?? false;
+                      });
+                    },
+                  );
+                },
+              ),
             ),
 
-            CheckboxListTile(
-              title: const Text("DSA Practice"),
-              value: dsa,
-              onChanged: (value) {
-                setState(() {
-                  dsa = value!;
-                });
-              },
-            ),
-
-            CheckboxListTile(
-              title: const Text("Gym"),
-              value: gym,
-              onChanged: (value) {
-                setState(() {
-                  gym = value!;
-                });
-              },
-            ),
-
-            const SizedBox(height: 30),
+            const SizedBox(height: 10),
 
             Text(
-              "Progress: ${getProgress().toStringAsFixed(0)}%",
+              "Progress: ${progress.toStringAsFixed(0)}%",
               style: const TextStyle(
-                fontSize: 24,
+                fontSize: 22,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -106,8 +158,10 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 10),
 
             LinearProgressIndicator(
-              value: getProgress() / 100,
+              value: progress / 100,
             ),
+
+            const SizedBox(height: 20),
           ],
         ),
       ),
